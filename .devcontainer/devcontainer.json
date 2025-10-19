@@ -1,1 +1,13 @@
-{"image":"mcr.microsoft.com/devcontainers/python:3.12"}
+{
+  "name": "tensym",
+  "build": { "dockerfile": "../Dockerfile" },
+  "context": "..",
+  "customizations": {
+    "jetbrains": {
+        "plugins": [
+          "com.github.copilot"
+        ],
+    },
+  },
+  "forwardPorts": [3000]
+}

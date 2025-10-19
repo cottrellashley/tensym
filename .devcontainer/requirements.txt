@@ -1,0 +1,6 @@
+sympy
+numpy
+loguru
+pytest
+ipykernel
+notebook
