@@ -1,1 +1,1 @@
-from ._lexer import Lexer
+from ._lexer import Lexer, tokenize_string

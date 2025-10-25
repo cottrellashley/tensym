@@ -298,6 +298,30 @@ class Definition(BinaryNode):
         return self.right
 
 
+class Equation(BinaryNode):
+    """Definition node (=) i.e. x = y as an equation."""
+
+    def __init__(self, source_span: SourceSpan, target: Union['TensorNode', 'SymbolNode'], value: AstNode):
+        # Create a symbol node for the target
+        assert isinstance(target, (TensorNode, SymbolNode)), "Definition target must be a TensorNode or SymbolNode"
+        super().__init__(NodeType.DEFINITION, source_span, target, value)
+
+    @property
+    def target_key(self) -> str:
+        """Get the definition target name."""
+        if isinstance(self.left, TensorNode):
+            return self.left.identifier
+        elif isinstance(self.left, SymbolNode):
+            return self.left.name
+        else:
+            raise TypeError("Definition target must be a TensorNode or SymbolNode")
+
+    @property
+    def value(self) -> AstNode:
+        """Get the definition value."""
+        return self.right
+
+
 ######################################################################################################################
 ##################################################   FUNCTION NODES   ################################################
 ######################################################################################################################

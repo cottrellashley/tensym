@@ -175,9 +175,24 @@ class CodeIterator(Iterator[int]):
         underline = ' ' * (span.start_pos - 1) + '^'
         return f"{line_content}\n{underline}"
 
-    def source_span_from_token(self, token: 'Token') -> SourceSpan:
-        end = token.end_index
-        start = end - len(token)
+    def pprint_source_span(self, span: SourceSpan) -> str:
+        lines = self.raw_code.splitlines()
+        # Handle case when end pos is a newline character at the end of the line
+        if span.start_line - 1 < 0 or span.start_line - 1 >= len(lines):
+            return ""
+        line_content = lines[span.start_line - 1]
+
+        pointers = '^' * (span.end_pos - span.start_pos)
+        underline = ' ' * (span.start_pos - 1) + pointers
+        return f"{line_content}\n{underline}"
+
+    def source_span_from_token(self, start_token: 'Token', end_token: 'Token' = None) -> SourceSpan:
+        if end_token is not None:
+            end = end_token.end_index
+            start = start_token.end_index  - len(start_token)
+        else:
+            end = start_token.end_index
+            start = start_token.end_index - len(start_token)
         return self.build_source_span(start, end)
 
     def __str__(self):

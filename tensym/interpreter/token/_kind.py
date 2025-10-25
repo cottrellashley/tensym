@@ -90,6 +90,7 @@ class TokenKind(Enum):
     OP_BAND        = auto()  # &
     OP_BOR         = auto()  # |
     OP_BXOR        = auto()  # ^
+    OP_STARSTAR    = auto()  # **
     OP_NOT         = auto()  # !
     OP_TILDE       = auto()  # ~
     OP_PRIME       = auto()  # ', ′, ″, ‴
@@ -116,6 +117,7 @@ class TokenKind(Enum):
 
     EOF            = auto()
     ERROR          = auto()
+    EOI            = auto()  # End of input
 
     def __eq__(self, other):
         if isinstance(other, str):

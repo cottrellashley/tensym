@@ -147,6 +147,7 @@ OP_TOKEN_MAP: Dict[Tuple[int, ...], TokenKind] = {
 
     # compound assigns
     _ordt("+="): TokenKind.OP_PLUSEQUAL,
+    _ordt("**"): TokenKind.OP_STARSTAR,
     _ordt("-="): TokenKind.OP_MINUSEQUAL,
     _ordt("*="): TokenKind.OP_MULEQUAL,
     _ordt("/="): TokenKind.OP_DIVEQUAL,
