@@ -1,5 +1,5 @@
-"""Source map utilities: attach source spans to AST / HIR nodes (minimal).
-"""
+"""Source map utilities: attach source spans to AST / HIR nodes (minimal)."""
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -20,4 +20,3 @@ def attach_span(node, span: Optional[SourceSpan]):
 
 def get_span(node) -> Optional[SourceSpan]:
     return getattr(node, "_span", None)
-

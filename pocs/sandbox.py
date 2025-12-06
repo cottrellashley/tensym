@@ -1,17 +1,18 @@
 # spawn-safe, portable demo: rank-4 tensors + ProcessPoolExecutor
-import os
-from itertools import product
 import multiprocessing as mp
+import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from itertools import product
 
 import numpy as np
 import sympy as sp
 
+
 # ---------- build some symbolic tensors ----------
 def build_rank4_tensors():
     # 4D spacetime metric (Minkowski) and Kronecker delta
-    g = sp.diag(-1, 1, 1, 1)      # 4x4 sympy Matrix
-    delta = sp.eye(4)             # 4x4 sympy Matrix (Kronecker delta)
+    g = sp.diag(-1, 1, 1, 1)  # 4x4 sympy Matrix
+    delta = sp.eye(4)  # 4x4 sympy Matrix (Kronecker delta)
 
     shape = (4, 4, 4, 4)
     a = np.empty(shape, dtype=object)
@@ -33,13 +34,16 @@ def build_rank4_tensors():
     e.fill(sp.S.Zero)
     return {"a": a, "b": b, "c": c, "d": d}, e
 
+
 # ---------- worker plumbing ----------
 # We load the buffers once per worker via initializer (faster than sending every task).
 _TENSORS = None
 
+
 def init_worker(buffers):
     global _TENSORS
     _TENSORS = buffers
+
 
 def compute_path(expr: str, target_idx: tuple[int, int, int, int]):
     """
@@ -53,15 +57,16 @@ def compute_path(expr: str, target_idx: tuple[int, int, int, int]):
     val = eval(expr, {"__builtins__": {}}, env)
     return target_idx, val
 
+
 if __name__ == "__main__":
     buffers, e = build_rank4_tensors()
 
     # Define your "paths": (expression_string, target_index_tuple)
     paths: list[tuple[str, tuple[int, int, int, int]]] = [
         ("a[0,0,0,0] + b[1,0,0,1] * c[0,0,1,1] - d[0,0,0,0]", (0, 0, 0, 0)),
-        ("a[1,1,1,1] + 2*b[1,1,1,1] + c[1,1,1,1]",             (1, 1, 1, 1)),
-        ("b[2,0,2,0] * (c[2,0,2,0] - d[2,0,2,0])",             (2, 0, 2, 0)),
-        ("a[3,3,0,0] - a[0,0,3,3] + d[0,3,0,3]",               (3, 3, 0, 0)),
+        ("a[1,1,1,1] + 2*b[1,1,1,1] + c[1,1,1,1]", (1, 1, 1, 1)),
+        ("b[2,0,2,0] * (c[2,0,2,0] - d[2,0,2,0])", (2, 0, 2, 0)),
+        ("a[3,3,0,0] - a[0,0,3,3] + d[0,3,0,3]", (3, 3, 0, 0)),
     ]
 
     # You can generate these systematically from your scheduler/tiler.

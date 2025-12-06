@@ -1,9 +1,8 @@
-"""VM package for tensym: bytecode, values and runtime executor.
-"""
+"""VM package for tensym: bytecode, values and runtime executor."""
 
 __all__ = [
     "bytecode",
-    "values", 
+    "values",
     "runtime",
     "executor",
     "memory",

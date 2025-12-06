@@ -8,14 +8,15 @@ The symbol table handles:
 
 The VM gets slot-based instructions, not string names.
 """
+
 from dataclasses import dataclass
-from typing import Dict, Optional, Any, List, Tuple
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class TensorVariance(Enum):
-    COVARIANT = -1    # lower index: T_i
-    CONTRAVARIANT = 1 # upper index: T^i
+    COVARIANT = -1  # lower index: T_i
+    CONTRAVARIANT = 1  # upper index: T^i
 
 
 @dataclass
@@ -37,33 +38,44 @@ class Symbol:
 
 class SymbolTable:
     """Compile-time symbol table with VM slot allocation."""
-    
+
     def __init__(self, parent: Optional["SymbolTable"] = None):
         self.parent = parent
         self.symbols: Dict[str, Symbol] = {}
         self.next_slot: int = 0 if parent is None else parent.next_slot
-        
+
         # Index management
         self.dummy_counter = 0
         self.metrics: Dict[str, Symbol] = {}
         self.connections: Dict[str, Symbol] = {}
 
-    def define(self, name: str, typ: Optional[TensorType] = None, 
-               value: Optional[Any] = None, is_metric: bool = False,
-               is_connection: bool = False) -> Symbol:
+    def define(
+        self,
+        name: str,
+        typ: Optional[TensorType] = None,
+        value: Optional[Any] = None,
+        is_metric: bool = False,
+        is_connection: bool = False,
+    ) -> Symbol:
         """Define a symbol and allocate a VM slot."""
         slot_id = self.next_slot
         self.next_slot += 1
-        
-        sym = Symbol(name=name, typ=typ, slot_id=slot_id, value=value,
-                     is_metric=is_metric, is_connection=is_connection)
+
+        sym = Symbol(
+            name=name,
+            typ=typ,
+            slot_id=slot_id,
+            value=value,
+            is_metric=is_metric,
+            is_connection=is_connection,
+        )
         self.symbols[name] = sym
-        
+
         if is_metric:
             self.metrics[name] = sym
         if is_connection:
             self.connections[name] = sym
-            
+
         return sym
 
     def lookup(self, name: str) -> Optional[Symbol]:
@@ -98,4 +110,3 @@ class SymbolTable:
             metrics.update(cur.metrics)
             cur = cur.parent
         return metrics
-

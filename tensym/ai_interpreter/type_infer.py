@@ -2,7 +2,9 @@
 
 This module provides very small helpers to compute free indices for AST/Tensor nodes.
 """
+
 from typing import Set
+
 from .index_system import Index
 
 
@@ -18,4 +20,3 @@ class TypeError(Exception):
 def ensure_compatible(*types) -> bool:
     # placeholder: always returns True
     return True
-

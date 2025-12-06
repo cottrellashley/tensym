@@ -45,20 +45,50 @@
 # func-def:
 #     FUNCTIONID? LPAR (ID (COMMA ID)*)? RPAR (EQUAL expr NEWLINE)
 #
+# statement:
+#     KEYWORD:print? expr
+#   | if-stmt
+#
+# if-stmt:
+#     KW_IF boolean_expression ':' block
+#       (KW_ELIF boolean_expression ':' block)*
+#       (KW_ELSE ':' block)?
+#
+# block:
+#     NEWLINE INDENT statements DEDENT
+#   | statement        # single-line suite
 # ##############################################################################
 
 import os
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, Optional
+
 from tensym.interpreter.ast_nodes import (
-    Module, ExprStmt, AstNode, BinaryNode, UnaryNode, ArrayNode,
-    IntNode, FloatNode, SymbolNode, NegNode, PosNode, NotNode,
-    PrintNode, Definition, Call, Def, TensorNode, Infinitesimal,
-    NodeType, ConstantNode, Equation
+    ArrayNode,
+    AstNode,
+    BinaryNode,
+    Call,
+    ConstantNode,
+    Definition,
+    Equation,
+    ExprStmt,
+    FloatNode,
+    IfNode,
+    IntNode,
+    Module,
+    NegNode,
+    NodeType,
+    NotNode,
+    PosNode,
+    PrintNode,
+    StringNode,
+    SymbolNode,
+    TensorNode,
 )
 from tensym.interpreter.diagnostics import SourceSpan
-from tensym.interpreter.token import Token, TokenKind
+from tensym.interpreter.iterator import CodeIterator, Iterator, IterBoundary
 from tensym.interpreter.lexer import tokenize_string
-from tensym.interpreter.iterator import Iterator, IterBoundary, CodeIterator
+from tensym.interpreter.token import Token, TokenKind
+
 
 class TokenEnd(Token):
     """Special token to represent end of token stream."""
@@ -71,10 +101,10 @@ class Parser:
     """Recursive descent parser for the tensor/mathematical language."""
 
     def __init__(
-            self,
-            tokens: Iterable[Token],
-            debug_code_iter: CodeIterator,
-            debug: bool = False
+        self,
+        tokens: Iterable[Token],
+        debug_code_iter: CodeIterator,
+        debug: bool = False,
     ):
         self.debug_code_iter = debug_code_iter
         self.debug = os.environ.get("TENSYM_PARSER_DEBUG_MODE", "0") == "1" or debug
@@ -116,7 +146,7 @@ class Parser:
 
     def match_kind(self, *kinds: TokenKind, **token) -> bool:
         """Check if current token matches any of the given kinds."""
-        return token.get('token', self.__current_token).kind in kinds
+        return token.get("token", self.__current_token).kind in kinds
 
     def match_lexeme(self, *lexemes: str) -> bool:
         """Check if current token matches any of the given lexemes."""
@@ -125,12 +155,22 @@ class Parser:
         return self.__current_token.lexeme in lexemes
 
     def consume(self, kind: TokenKind, error_msg: str = None) -> Token:
-        """Consume a token of the given kind or raise an error."""
-        code_loc = self.debug_code_iter.pprint_token(self.current_token)
+        """Consume a token of the given kind or raise an error.
+        We only compute a pretty code location when we *actually* error out, and we
+        guard against zero-width/span issues for INDENT/DEDENT/etc.
+        """
         if not self.match_kind(kind):
+            code_loc = ""
+            try:
+                code_loc = self.debug_code_iter.pprint_token(self.current_token)
+            except Exception:
+                # Some layout tokens (INDENT/DEDENT) may have zero-width spans; fall back silently
+                code_loc = ""
             if error_msg is None:
-                error_msg = f"Expected {kind}, got {self.current_token.kind if self.current_token else 'EOF'}"
-            error_msg += f"\n{code_loc}"
+                kind_str = self.current_token.kind if self.current_token else "EOF"
+                error_msg = f"Expected {kind}, got {kind_str}"
+            if code_loc:
+                error_msg += f"\n{code_loc}"
             raise SyntaxError(error_msg)
         token = self.current_token
         self.advance()
@@ -142,7 +182,9 @@ class Parser:
         full_message = f"{message}\n{code_loc}"
         raise SyntaxError(full_message)
 
-    def get_source_span(self, start_token: Token, end_token: Token = None) -> SourceSpan:
+    def get_source_span(
+        self, start_token: Token, end_token: Token = None
+    ) -> SourceSpan:
         """Get current source span for AST nodes."""
         if end_token is not None:
             if self.match_kind(TokenKind.EOI):
@@ -181,7 +223,12 @@ class Parser:
             end_token = self.current_token
 
             if not self.end_of_iteration:
-                self.consume(TokenKind.NEWLINE)
+                if self.match_kind(TokenKind.NEWLINE):
+                    self.consume(TokenKind.NEWLINE)
+                elif self.match_kind(TokenKind.DEDENT):
+                    self.consume(TokenKind.DEDENT)
+                elif self.match_kind(TokenKind.INDENT):
+                    self.consume(TokenKind.INDENT)
 
             if stmt:
                 statements.append(stmt)
@@ -201,7 +248,14 @@ class Parser:
         # Handle print statements
         if self.match_kind(TokenKind.KW_PRINT):
             return self.print_statement()
-
+        elif self.match_kind(TokenKind.KW_LET):
+            return self.declaration()
+        elif self.match_kind(TokenKind.KW_IF):
+            return self.if_statement()
+        elif self.match_kind(TokenKind.KW_WHILE):
+            self.throw_error("While statements are not yet implemented.")
+        elif self.match_kind(TokenKind.KW_FOR):
+            self.throw_error("For statements are not yet implemented.")
         # Otherwise it's an expression statement
 
         start_token = self.current_token
@@ -220,60 +274,110 @@ class Parser:
         source_span = self.get_source_span(start_token, end_token)
         return PrintNode(source_span, expr)
 
+    def if_statement(self) -> IfNode:
+        """Parse if/elif/else as a single IfNode with elif list + optional else body."""
+        start_token = self.current_token
+        self.consume(TokenKind.KW_IF)
+
+        condition = self.boolean_expression()
+        then_body = self.block()
+
+        elifs: list[tuple[AstNode, list[AstNode]]] = []
+        while self.match_kind(TokenKind.KW_ELIF):
+            self.advance()
+            elif_cond = self.boolean_expression()
+            elif_body = self.block()
+            elifs.append((elif_cond, elif_body))
+
+        else_body: list[AstNode] | None = None
+        if self.match_kind(TokenKind.KW_ELSE):
+            self.advance()
+            else_body = self.block()
+
+        end_token = self.current_token
+        source_span = self.get_source_span(start_token, end_token)
+        return IfNode(
+            source_span, condition, then_body, elifs=elifs, else_body=else_body
+        )
+
+    def block(self) -> list[AstNode]:
+        """Parse a suite after ':'; either indented multi-line or single-line."""
+        self.consume(TokenKind.COLON, "Expected ':' after condition")
+
+        # Multi-line: ':' NEWLINE INDENT ... DEDENT
+        if self.match_kind(TokenKind.NEWLINE, TokenKind.KW_NEWLINE):
+            self.advance()
+            self.consume(TokenKind.INDENT, "Expected an indented block after ':'")
+
+            body: list[AstNode] = []
+            while not self.match_kind(TokenKind.DEDENT, TokenKind.EOI):
+                # Allow blank lines inside the block
+                while self.match_kind(TokenKind.NEWLINE, TokenKind.KW_NEWLINE):
+                    self.advance()
+                if self.match_kind(TokenKind.DEDENT, TokenKind.EOI):
+                    break
+
+                stmt = self.statement()
+                if stmt is not None:
+                    body.append(stmt)
+
+                # Optional newline after a statement within the block
+                if self.match_kind(TokenKind.NEWLINE, TokenKind.KW_NEWLINE):
+                    self.advance()
+
+            self.consume(TokenKind.DEDENT, "Expected block to be closed by DEDENT")
+            return body
+
+        # Single-line: ':' <statement>
+        stmt = self.statement()
+        return [stmt] if stmt is not None else []
+
     def declaration(self) -> Optional[AstNode]:
         """Parse a declaration (definition or equation)."""
         start_token = self.current_token
+        self.consume(TokenKind.KW_LET)
 
-        if self.match_kind(TokenKind.KW_LET):
-            self.consume(TokenKind.KW_LET)
-            expr = self.expression()
+        assert self.match_kind(TokenKind.ID, TokenKind.TENSOR_ID), (
+            "Expected identifier after 'let'"
+        )
+        if self.match_kind(TokenKind.ID):
+            var = self.atom()
+        else:
+            var = self.tensor()
+
+        if self.match_kind(TokenKind.ASSIGNMENT, TokenKind.COLON):
+            self.advance()
+            value = self.expression()
             end_token = self.current_token
             source_span = self.get_source_span(start_token, end_token)
-            return expr
+            return Definition(source_span, var, value)
+
+        return self.expression()
 
     def expression(self) -> Optional[AstNode]:
         """Parse an expression (assignment or boolean expression)."""
-        # Check for assignment tokens: (ID, :=) or (ID, =)
+        # Check for assignment tokens: (ID, =)
         start_token = self.current_token
-        tensor_expr = False
-        var_expr = None
-        atom_expr = (
-                self.match_kind(TokenKind.ID) and
-                self.match_kind(TokenKind.ASSIGNMENT, TokenKind.OP_EQUATE, token=self.peek())
-        )
-        if atom_expr:
-            var_expr = self.atom()
-
-        if self.match_kind(TokenKind.TENSOR_ID):
-            var_expr = self.tensor()
-            tensor_expr = self.match_kind(TokenKind.ASSIGNMENT, TokenKind.OP_EQUATE)
-            if not tensor_expr:
-                return var_expr
-
-        if not atom_expr and not tensor_expr:
-            return self.boolean_expression()
-
-        if self.match_kind(TokenKind.ASSIGNMENT):
-            self.consume(TokenKind.ASSIGNMENT)
+        if self.match_kind(TokenKind.ID, TokenKind.KW_GREEK) and self.match_kind(
+            TokenKind.OP_EQUATE, token=self.peek()
+        ):
+            assert self.match_kind(TokenKind.ID, TokenKind.KW_GREEK), (
+                "Expected identifier on left side of assignment."
+            )
+            var_token = self.current_token
+            self.advance()  # consume ID
+            self.consume(TokenKind.OP_EQUATE)  # consume =
+            var_expr = SymbolNode(
+                self.get_source_span(start_token=var_token), var_token.lexeme
+            )
             value = self.boolean_expression()
             end_token = self.current_token
             source_span = self.get_source_span(start_token, end_token)
-            # Always treat as definition since we matched ASSIGNMENT token
-            assert isinstance(var_expr, (SymbolNode, TensorNode)), "Left side of assignment must be a variable or tensor."
-            return Definition(source_span, var_expr, value)
-
-        elif self.match_kind(TokenKind.OP_EQUATE):
-            self.consume(TokenKind.OP_EQUATE)
-            value = self.boolean_expression()
-            end_token = self.current_token
-            source_span = self.get_source_span(start_token, end_token)
-            # Always treat as definition since we matched ASSIGNMENT token
-            assert isinstance(var_expr, (SymbolNode, TensorNode)), "Left side of assignment must be a variable or tensor."
+            assert isinstance(var_expr, (SymbolNode, TensorNode)), (
+                "Left side of assignment must be a variable or tensor."
+            )
             return Equation(source_span, var_expr, value)
-        else:
-            # Should not reach here
-            self.throw_error("Invalid assignment syntax.")
-
+        return self.boolean_expression()
 
     def boolean_expression(self) -> Optional[AstNode]:
         """Parse boolean expressions with and/or."""
@@ -281,7 +385,7 @@ class Parser:
         left = self.comparison()
 
         while self.match_kind(TokenKind.OP_AND, TokenKind.OP_OR):
-            hit = True
+            # hit = True  # Unused variable
             op_token = self.current_token
             self.advance()
             right = self.comparison()
@@ -301,12 +405,12 @@ class Parser:
         left = self.arithmetic()
 
         while self.match_kind(
-                TokenKind.OP_EQ,
-                TokenKind.OP_NE,
-                TokenKind.OP_LT,
-                TokenKind.OP_LE,
-                TokenKind.OP_GT,
-                TokenKind.OP_GE
+            TokenKind.OP_EQ,
+            TokenKind.OP_NE,
+            TokenKind.OP_LT,
+            TokenKind.OP_LE,
+            TokenKind.OP_GT,
+            TokenKind.OP_GE,
         ):
             op_token = self.current_token
             self.advance()
@@ -397,7 +501,9 @@ class Parser:
         start_token = self.current_token
         left = self.atom()
 
-        if self.match_kind(TokenKind.OP_BXOR, TokenKind.OP_STARSTAR):  # ^ or ** operator subject to change
+        if self.match_kind(
+            TokenKind.OP_BXOR, TokenKind.OP_STARSTAR
+        ):  # ^ or ** operator subject to change
             self.advance()
             right = self.factor()  # Right associative
             end_token = self.current_token
@@ -436,6 +542,11 @@ class Parser:
         # Function calls and tensors
         if self.match_kind(TokenKind.FUNC_ID):
             return self.function_call()
+
+        if self.match_kind(TokenKind.STRING):
+            token = self.current_token
+            self.advance()
+            return StringNode(self.get_source_span(token), token.lexeme)
 
         if self.match_kind(TokenKind.TENSOR_ID):
             return self.tensor()
@@ -487,7 +598,9 @@ class Parser:
 
         end_token = self.current_token
         self.consume(TokenKind.RBRACKET, "Expected ']' after array elements")
-        source_span = self.get_source_span(start_token, end_token) # Get source span from [ to ]
+        source_span = self.get_source_span(
+            start_token, end_token
+        )  # Get source span from [ to ]
 
         return ArrayNode(source_span, elements)
 
@@ -507,7 +620,9 @@ class Parser:
 
         end_token = self.current_token
         self.consume(TokenKind.RPAREN, "Expected ')' after function arguments")
-        source_span = self.get_source_span(start_token, end_token)  # Get source span from func name to ) i.e. sin(x) from s to )
+        source_span = self.get_source_span(
+            start_token, end_token
+        )  # Get source span from func name to ) i.e. sin(x) from s to )
         return Call(func_token.lexeme, source_span, args)
 
     def tensor(self) -> TensorNode:
@@ -526,10 +641,10 @@ class Parser:
 
             # Parse index identifiers
             while self.match_kind(
-                    TokenKind.ID,
-                    TokenKind.KW_GREEK,
+                TokenKind.ID,
+                TokenKind.KW_GREEK,
             ):
-                index_token = self.current_token # consume ID or KW_GREEK
+                index_token = self.current_token  # consume ID or KW_GREEK
                 self.advance()
                 value = None
 
@@ -549,11 +664,7 @@ class Parser:
         return tensor_node
 
 
-def parse_string(
-        code: str = None,
-        *,
-        filepath: str = None
-) -> Module:
+def parse_string(code: str = None, *, filepath: str = None) -> Module:
     """Parse tokens into a Module AST."""
     tokens = tokenize_string(raw_code=code, filepath=filepath)
     iter = CodeIterator(raw_code=code, filepath=filepath)
@@ -563,28 +674,18 @@ def parse_string(
 
 if __name__ == "__main__":
     code = """
-        g_{cols rows} = df
-        g^{cols rows}
+        let Eq1 := x = g_{mu: 0}_{nu: 2}
+        let g_{mu}_{nu} := [[1, 0], [0, -1]]
+        print(Eq1)
         
-        # let x := 5
-        
-        # let A_{a} := B_{a}
-        # let Eq1 := y = x + 2
-        # 
-        # let 
-        # 
-        # if x > y and y < 10:
-        #     print("x is greater than y and y is less than 10")
-        # else:
-        #     print("Condition not met")
-
-        print g_{mu nu}
-        sin(3.14)
-        let Eq1: x = g_{mu: 0}_{nu: 2}
-        
-        print(Eq1.lhs)
-        
-        cos(1)
+        if x > 0:
+            print("x is positive")
+        elif x == 0:
+            print("x is zero")
+        elif x < 0:
+            print("x is negative")
+        else:
+            print("x is non-positive")
     """
     x = parse_string(code)
     c = CodeIterator(raw_code=code)

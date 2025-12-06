@@ -1,7 +1,7 @@
-"""Typed AST node classes for tensym (minimal stubs).
-"""
+"""Typed AST node classes for tensym (minimal stubs)."""
+
 from dataclasses import dataclass
-from typing import List, Optional, Any
+from typing import Any, List
 
 
 class Node:

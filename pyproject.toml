@@ -1,0 +1,77 @@
+[project]
+name = "tensym"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.9"
+dependencies = [
+    "sympy",
+    "numpy", 
+    "loguru",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tensym*"]
+exclude = ["tests*", "pocs*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "pipdeptree>=2.0.0",
+    "safety>=2.0.0",
+    "build>=0.10.0",
+]
+
+[tool.ruff]
+exclude = [
+    "pocs/",
+    "tensym/interpreter/parser/legacy_ast_builder.py",
+    "tensym/interpreter/parser/base.py",
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build/",
+    "dist/",
+    "*.ipynb",
+    "dev.ipynb",
+]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",  # Line too long (handled by formatter)
+    "F401",  # Imported but unused
+    "F841",  # Local variable assigned but never used
+    "W293",  # Blank line contains whitespace
+    "I001",  # Import block is unsorted
+]
+
+[tool.flake8]
+exclude = ["pocs/", ".git", ".venv", "__pycache__", "build/", "dist/"]
+max-line-length = 120
+ignore = ["E501", "E266", "W293", "E303", "W291", "E262", "E711"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+no_implicit_optional = false
+warn_return_any = false
+warn_unused_ignores = false
+check_untyped_defs = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+exclude = [
+    "pocs/", 
+    "tests/", 
+    "tensym/interpreter/",
+    "tensym/ai_interpreter/",
+    "tensym/vm/",
+]

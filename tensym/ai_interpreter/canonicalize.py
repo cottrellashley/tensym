@@ -2,8 +2,9 @@
 
 This is a small placeholder implementing a trivial alpha-renamer for HIR nodes.
 """
-from .hir import HIRNode, TensorRef, Contract, TensorProduct
+
 from .ast_walker import Transformer
+from .hir import HIRNode, TensorRef
 from .index_system import fresh_dummy
 
 
@@ -27,4 +28,3 @@ class Canonicalizer(Transformer):
 def canonicalize(hir: HIRNode) -> HIRNode:
     c = Canonicalizer()
     return c.visit(hir)
-

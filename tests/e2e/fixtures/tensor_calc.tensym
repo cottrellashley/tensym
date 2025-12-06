@@ -1,0 +1,32 @@
+# Tensor calculations with Einstein notation
+with metric g:
+    # Define metric tensor (Minkowski space)
+    g_{00} = -1
+    g_{11} = 1
+    g_{22} = 1
+    g_{33} = 1
+    
+    # Four-vector position
+    x^μ = [t, x, y, z]
+    
+    # Velocity four-vector
+    u^μ = dx^μ/dτ
+    
+    # Riemann curvature tensor
+    R^ρ_{σμν} = ∂_μ Γ^ρ_{νσ} - ∂_ν Γ^ρ_{μσ} + Γ^ρ_{μλ} Γ^λ_{νσ} - Γ^ρ_{νλ} Γ^λ_{μσ}
+    
+    # Ricci tensor
+    R_{μν} = R^ρ_{μρν}
+    
+    # Ricci scalar
+    R = g^{μν} R_{μν}
+    
+    # Einstein tensor
+    G_{μν} = R_{μν} - (1/2) g_{μν} R
+
+# Tensor operations
+T_{ij} = A_{ik} B^k_j
+S^{ij} = g^{ik} g^{jl} T_{kl}
+
+# Contraction
+trace = T^i_i

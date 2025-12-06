@@ -1,6 +1,7 @@
-from typing import List, Any, TypeVar, Optional
+from typing import Any, List, Optional, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 def custom_list_index_getter(_list: List, _value: Any) -> int:
     """
@@ -15,6 +16,7 @@ def custom_list_index_getter(_list: List, _value: Any) -> int:
     except ValueError:
         return -1
 
+
 def get_position(__value: T, __list: List[T]) -> Optional[int]:
     """
     Gets the index of the value within the list. If value not in list, returns None.
@@ -24,5 +26,5 @@ def get_position(__value: T, __list: List[T]) -> Optional[int]:
     """
     try:
         return __list.index(__value)
-    except ValueError as e:
+    except ValueError:
         return None

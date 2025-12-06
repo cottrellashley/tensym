@@ -1,0 +1,24 @@
+# Simple mathematical expressions
+let a = 10
+let b = 20
+let c = 3.14159
+
+# Basic arithmetic
+let sum = a + b
+let difference = a - b
+let product = a * b
+let quotient = a / b
+let remainder = a % 7
+
+# Mathematical functions
+let square_root = sqrt(16)
+let power = a^2
+let logarithm = log(100)
+
+# Constants
+let pi_value = pi
+let e_value = e
+
+print("Sum:", sum)
+print("Product:", product)
+print("Square root of 16:", square_root)

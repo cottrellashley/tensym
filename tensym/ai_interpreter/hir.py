@@ -3,8 +3,9 @@
 HIR is a small, typed set of nodes representing tensor-aware operations
 that are easier to lower to bytecode than raw AST.
 """
+
 from dataclasses import dataclass
-from typing import List, Any, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 
 class HIRNode:
@@ -63,4 +64,3 @@ class LowerIdx(HIRNode):
 @dataclass
 class Return(HIRNode):
     value: Optional[HIRNode]
-

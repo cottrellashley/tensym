@@ -4,9 +4,21 @@ This is a minimal, opinionated implementation sufficient to exercise the VM.
 It supports Assign, TensorRef, TensorLiteral, TensorProduct, Contract, RaiseIdx,
 LowerIdx and Return HIR nodes.
 """
-from typing import List, Tuple, Any, Dict
-from .hir import Module, Assign, TensorRef, TensorLiteral, TensorProduct, Contract, RaiseIdx, LowerIdx, Return
-from ..ai_vm.bytecode import Op, Instr
+
+from typing import Any, Dict, List
+
+from ..ai_vm.bytecode import Instr, Op
+from .hir import (
+    Assign,
+    Contract,
+    LowerIdx,
+    Module,
+    RaiseIdx,
+    Return,
+    TensorLiteral,
+    TensorProduct,
+    TensorRef,
+)
 
 
 class IRProgram:
@@ -75,4 +87,3 @@ class IRBuilder:
             prog.instrs.append(Instr(Op.RETURN, ()))
         else:
             raise NotImplementedError(f"IRBuilder: unhandled node type {type(node)}")
-

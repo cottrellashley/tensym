@@ -1,4 +1,4 @@
-from typing import List, ByteString, Optional
+from typing import ByteString, List, Optional
 
 
 class SourceCode:
@@ -18,6 +18,7 @@ class SourceCode:
     Supports concatenation, length retrieval, and iteration.
     Can be used as a context manager.
     """
+
     def __init__(self, sc_bytes: ByteString):
         self.__sc_bytes = sc_bytes
         self.filename = None
@@ -34,7 +35,7 @@ class SourceCode:
     @property
     def as_string(self) -> str:
         """Return the source code as a decoded UTF-8 string."""
-        return self.__sc_bytes.decode('utf-8')
+        return self.__sc_bytes.decode("utf-8")
 
     @property
     def as_byte_string(self) -> ByteString:
@@ -44,20 +45,20 @@ class SourceCode:
     @classmethod
     def from_string(cls, s: str):
         """Create a SourceCode object from a string."""
-        return cls(s.encode('utf-8'))
+        return cls(s.encode("utf-8"))
 
     @classmethod
     def from_file(cls, file_path: str):
         """Create a SourceCode object from a UTF-8 encoded file."""
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             source_code = file.read()
-        return cls(source_code.encode('utf-8'))
+        return cls(source_code.encode("utf-8"))
 
     @classmethod
     def from_stream(cls, stream):
         """Create a SourceCode object from a stream (e.g., a file-like object)."""
         source_code = stream.read()
-        return cls(source_code.encode('utf-8'))
+        return cls(source_code.encode("utf-8"))
 
     @classmethod
     def from_bytes(cls, b: bytes):
@@ -103,7 +104,9 @@ class SourceCode:
         :return: The character at the specified position.
         """
         if position < 0 or position >= len(self):
-            raise IndexError(f"Position {position} is out of range for source code of length {len(self)}.")
+            raise IndexError(
+                f"Position {position} is out of range for source code of length {len(self)}."
+            )
         return self.as_string[position]
 
     def peek(self, position: int, count: int = 1) -> str:
@@ -114,8 +117,10 @@ class SourceCode:
         :return: A substring of the specified length starting from the position.
         """
         if position < 0 or position >= len(self):
-            raise IndexError(f"Position {position} is out of range for source code of length {len(self)}.")
-        return self.as_string[position:position + count]
+            raise IndexError(
+                f"Position {position} is out of range for source code of length {len(self)}."
+            )
+        return self.as_string[position : position + count]
 
     def slice(self, start: int, end: Optional[int] = None) -> str:
         """
@@ -124,8 +129,14 @@ class SourceCode:
         :param end: The ending index (0-based, exclusive). If None, goes to the end of the string.
         :return: The sliced substring.
         """
-        if start < 0 or start >= len(self) or (end is not None and (end < start or end > len(self))):
-            raise IndexError(f"Invalid slice range {start}:{end} for source code of length {len(self)}.")
+        if (
+            start < 0
+            or start >= len(self)
+            or (end is not None and (end < start or end > len(self)))
+        ):
+            raise IndexError(
+                f"Invalid slice range {start}:{end} for source code of length {len(self)}."
+            )
         return self.as_string[start:end]
 
     def is_empty(self) -> bool:
@@ -139,5 +150,7 @@ class SourceCode:
         :return: A list of remaining byte values.
         """
         if start < 0 or start >= len(self.as_byte_list):
-            raise IndexError(f"Position {start} is out of range for source code of length {len(self)}.")
+            raise IndexError(
+                f"Position {start} is out of range for source code of length {len(self)}."
+            )
         return self.as_byte_list[start:]

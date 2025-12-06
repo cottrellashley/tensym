@@ -1,8 +1,7 @@
-"""Index system: Index objects, variance, and dummy allocator (minimal).
-"""
+"""Index system: Index objects, variance, and dummy allocator (minimal)."""
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterator
 
 
 class Variance(Enum):
@@ -29,6 +28,6 @@ class DummyAllocator:
 # simple helper
 _allocator = DummyAllocator()
 
+
 def fresh_dummy() -> Index:
     return _allocator.fresh()
-

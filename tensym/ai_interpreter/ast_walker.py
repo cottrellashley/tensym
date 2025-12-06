@@ -2,6 +2,7 @@
 
 Provides simple visitor base classes that other passes can subclass.
 """
+
 from typing import Any
 
 
@@ -49,4 +50,3 @@ class Transformer(Visitor):
                 else:
                     setattr(node, name, res)
         return node
-

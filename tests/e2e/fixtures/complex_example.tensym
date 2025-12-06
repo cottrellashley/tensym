@@ -1,0 +1,54 @@
+# Complex TenSym example with multiple features
+# Mathematical constants and Greek letters
+let α = 1.5
+let β = 2.0
+let γ = α + β
+
+# Function definitions
+def factorial(n):
+    if n <= 1:
+        return 1
+    else:
+        return n * factorial(n - 1)
+
+def fibonacci(n):
+    if n <= 1:
+        return n
+    else:
+        return fibonacci(n - 1) + fibonacci(n - 2)
+
+# Tensor operations with Unicode symbols
+with metric η:
+    # Minkowski metric
+    η_{μν} = diag(-1, 1, 1, 1)
+    
+    # Electromagnetic field tensor
+    F_{μν} = ∂_μ A_ν - ∂_ν A_μ
+    
+    # Dual tensor
+    F̃^{μν} = (1/2) ε^{μνρσ} F_{ρσ}
+    
+    # Maxwell equations
+    ∂_μ F^{μν} = J^ν
+    ∂_μ F̃^{μν} = 0
+
+# Complex mathematical expressions
+let result = ∑_{i=1}^{n} x_i * y_i
+let integral = ∫_{-∞}^{∞} e^{-x²} dx
+let limit = lim_{x→0} (sin(x)/x)
+
+# Quantum mechanics notation
+let ψ = |0⟩ + |1⟩
+let expectation = ⟨ψ|Ĥ|ψ⟩
+let commutator = [x̂, p̂] = iℏ
+
+# Set theory and logic
+let universal = ∀x ∈ ℝ: x² ≥ 0
+let existential = ∃x ∈ ℕ: x > 100
+let implication = (P ∧ Q) → R
+
+# Print results
+print("Alpha:", α)
+print("Factorial of 5:", factorial(5))
+print("Fibonacci of 10:", fibonacci(10))
+print("Result:", result)
