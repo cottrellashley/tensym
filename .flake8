@@ -1,7 +1,0 @@
-[flake8]
-exclude = pocs/,.git,.venv,__pycache__,build/,dist/
-max-line-length = 120
-ignore = E501,E266,W293,E303,W291,E262,E711,F401,F841,F821,W503,E203,E704
-per-file-ignores =
-    tensym/interpreter/parser/legacy_ast_builder.py:F821
-    tests/*:F401,F841

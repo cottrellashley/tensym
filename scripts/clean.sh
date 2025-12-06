@@ -15,7 +15,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  - Python cache files (*.pyc, __pycache__, etc.)"
     echo "  - Build artifacts (build/, dist/, *.egg-info/)"
     echo "  - Test artifacts (.pytest_cache/, htmlcov/, .coverage)"
-    echo "  - Linter caches (.ruff_cache, .mypy_cache, etc.)"
+    echo "  - Linter caches (.ruff_cache, .mypy_cache, .flake8, etc.)"
     echo "  - IDE files (.idea/, .vscode/)"
     echo "  - Temporary files (*.tmp, *.log, *.bak)"
     echo "  - Virtual environments (.venv unless --keep-venv is used)"
@@ -55,6 +55,7 @@ safe_remove ".mypy_cache"
 safe_remove ".pylint.d"
 safe_remove ".black"
 safe_remove ".isort.cfg"
+safe_remove ".flake8"
 
 # Remove build artifacts
 echo "Removing build artifacts..."
